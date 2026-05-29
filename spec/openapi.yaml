@@ -1,0 +1,68 @@
+openapi: 3.2.0
+info:
+  title: stacks API
+  version: 0.0.1
+  description: >
+    Shared contract every backend in this repo implements identically.
+    Source of truth — backends conform to this, not the other way around.
+
+paths:
+  /users:
+    post:
+      summary: Create a user
+      operationId: createUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUser"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/{id}:
+    get:
+      summary: Get a user by id
+      operationId: getUser
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+components:
+  schemas:
+    User:
+      type: object
+      required: [id, email, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+    CreateUser:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
