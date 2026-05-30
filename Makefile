@@ -1,7 +1,10 @@
-.PHONY: ts-nestjs ts-nestjs-deps ts-nestjs-migrate ts-nestjs-migration
+.PHONY: ts-nestjs ts-nestjs-deps ts-nestjs-migrate ts-nestjs-migration python-django
 
 ts-nestjs:
 	docker compose -f backends/ts-nestjs/compose.yaml up --watch
+
+python-django:
+	docker compose -f backends/python-django/compose.yaml up --watch
 
 # Populate host node_modules from the image for editor IntelliSense (app runs in containers).
 ts-nestjs-deps:
