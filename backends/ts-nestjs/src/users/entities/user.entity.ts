@@ -11,7 +11,7 @@ export class User {
   @PrimaryColumn({ type: 'uuid', default: () => 'uuidv7()' })
   id: string;
 
-  @Column({ unique: true })
+  @Column({ type: 'text', unique: true })
   email: string;
 
   @CreateDateColumn({ type: 'timestamptz' })
