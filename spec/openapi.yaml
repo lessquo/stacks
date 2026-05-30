@@ -7,6 +7,14 @@ info:
     Source of truth — backends conform to this, not the other way around.
 
 paths:
+  /:
+    get:
+      summary: Health check
+      operationId: healthCheck
+      responses:
+        "200":
+          description: OK
+
   /users:
     post:
       summary: Create a user
