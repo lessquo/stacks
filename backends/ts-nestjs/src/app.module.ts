@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
+import { SnakeNamingStrategy } from './common/snake-naming.strategy';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -14,6 +15,7 @@ import { UsersModule } from './users/users.module';
       database: process.env.DB_NAME,
       autoLoadEntities: true,
       synchronize: false,
+      namingStrategy: new SnakeNamingStrategy(),
     }),
     UsersModule,
   ],
