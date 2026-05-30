@@ -32,6 +32,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/User"
+        "400":
+          description: Validation failed
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
 
   /users/{id}:
     get:
@@ -51,6 +57,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/User"
+        "404":
+          description: User not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
 
 components:
   schemas:
@@ -77,3 +89,13 @@ components:
         email:
           type: string
           format: email
+    Problem:
+      type: object
+      description: RFC 9457 problem details
+      properties:
+        status:
+          type: integer
+        title:
+          type: string
+        detail:
+          type: string
