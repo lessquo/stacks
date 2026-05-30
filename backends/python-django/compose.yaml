@@ -3,8 +3,16 @@ services:
     build: .
     environment:
       PORT: 8080
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: stacks
+      DB_PASSWORD: stacks
+      DB_NAME: stacks
     ports:
       - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
     develop:
       watch:
         - action: sync
@@ -18,3 +26,22 @@ services:
           path: pyproject.toml
         - action: rebuild
           path: uv.lock
+
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: stacks
+      POSTGRES_PASSWORD: stacks
+      POSTGRES_DB: stacks
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stacks -d stacks"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  pgdata:
