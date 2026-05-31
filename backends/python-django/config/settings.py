@@ -71,6 +71,11 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
+REST_FRAMEWORK = {
+    'EXCEPTION_HANDLER': 'config.exception_handler.problem_detail_handler',
+    'DEFAULT_RENDERER_CLASSES': ['rest_framework.renderers.JSONRenderer'],
+}
+
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
