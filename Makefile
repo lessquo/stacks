@@ -1,7 +1,4 @@
-.PHONY: python-django python-django-makemigrations python-django-migrate ts-nestjs ts-nestjs-deps ts-nestjs-migrate ts-nestjs-migration conformance-schemathesis
-
-# Base URL of the running backend under test. Override per stack/host if needed.
-BASE_URL ?= http://host.docker.internal:8080
+.PHONY: python-django python-django-makemigrations python-django-migrate ts-nestjs ts-nestjs-deps ts-nestjs-migrate ts-nestjs-migration conformance-python-django conformance-ts-nestjs
 
 python-django:
 	docker compose -f backends/python-django/compose.yaml up --build --watch
@@ -34,10 +31,10 @@ ts-nestjs-migration:
 	  -v "$(CURDIR)/backends/ts-nestjs/src":/app/src app \
 	  npm run migration:generate -- src/migrations/$(name)
 
-# Run a conformance suite against a backend already running on BASE_URL.
-conformance-schemathesis:
-	docker run --rm \
-	  -v "$(CURDIR)/spec":/spec \
-	  -v "$(CURDIR)/conformance/schemathesis/schemathesis.toml":/schemathesis.toml \
-	  schemathesis/schemathesis:4.20.3 \
-	  --config-file /schemathesis.toml run /spec/openapi.yaml --url $(BASE_URL)
+# One-shot conformance: spin up a throwaway stack with a fresh DB, run Schemathesis,
+# tear it down. No need to start the backend separately.
+conformance-python-django:
+	conformance/schemathesis/run.sh python-django "uv run python manage.py migrate"
+
+conformance-ts-nestjs:
+	conformance/schemathesis/run.sh ts-nestjs "npm run migration:run"

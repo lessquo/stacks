@@ -1,0 +1,10 @@
+# Overlay applied only during conformance runs (layered on a stack's compose.yaml).
+# Schemathesis reaches the app over the Compose network (http://app:8080), so the
+# throwaway conformance stack publishes no host ports — that way it never collides
+# with a dev stack already holding 8080/5432. `!reset` clears the inherited list
+# (requires Docker Compose v2.24+).
+services:
+  app:
+    ports: !reset []
+  db:
+    ports: !reset []

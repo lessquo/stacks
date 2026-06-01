@@ -4,17 +4,15 @@ Spec-driven conformance testing with [Schemathesis](https://schemathesis.io). It
 
 ## Running
 
-Start a backend (publishes port 8080), then from the repo root:
+From the repo root, one command per stack (see [`../README.md`](../README.md) for what it does — throwaway stack, fresh DB, automatic teardown):
 
 ```bash
-make conformance-schemathesis                                   # default BASE_URL
-make conformance-schemathesis BASE_URL=http://host.docker.internal:8080
+make conformance-python-django   # or conformance-ts-nestjs
 ```
 
-Runs the official `schemathesis/schemathesis` image (pinned `4.20.3`) — nothing installed on the host. The spec is mounted read-only; the backend is reached over `BASE_URL`.
+Runs the official `schemathesis/schemathesis` image (pinned `4.20.3`) — nothing installed on the host. The spec is mounted read-only; the backend is reached at `http://app:8080` over the Compose network.
 
 ## Notes
 
 - **Spec version:** Schemathesis loads our OpenAPI **3.2.0** spec without issue.
 - **Stateful flows:** it auto-infers the create→retrieve link (`POST /users` returns `id`, `GET /users/{id}` consumes it) — no manual OpenAPI `links` needed.
-- **Auth (future):** when the contract gains authentication, a `schemathesis.toml` here can declare the token endpoint (dynamic auth) so tokens are fetched and injected automatically — roughly four lines, no custom code.
