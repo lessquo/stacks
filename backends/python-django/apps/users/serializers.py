@@ -4,6 +4,7 @@ from apps.users.models import User
 
 
 class UserSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField()
     createdAt = serializers.DateTimeField(source='created_at', read_only=True)
     updatedAt = serializers.DateTimeField(source='updated_at', read_only=True)
 
