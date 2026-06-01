@@ -1,10 +1,13 @@
-.PHONY: ts-nestjs ts-nestjs-deps ts-nestjs-migrate ts-nestjs-migration python-django python-django-makemigrations python-django-migrate
+.PHONY: ts-nestjs ts-nestjs-deps ts-nestjs-migrate ts-nestjs-migration python-django python-django-makemigrations python-django-migrate conformance-schemathesis
+
+# Base URL of the running backend under test. Override per stack/host if needed.
+BASE_URL ?= http://host.docker.internal:8080
 
 ts-nestjs:
-	docker compose -f backends/ts-nestjs/compose.yaml up --watch
+	docker compose -f backends/ts-nestjs/compose.yaml up --build --watch
 
 python-django:
-	docker compose -f backends/python-django/compose.yaml up --watch
+	docker compose -f backends/python-django/compose.yaml up --build --watch
 
 python-django-makemigrations:
 	docker compose -f backends/python-django/compose.yaml run --rm --no-deps \
@@ -30,3 +33,8 @@ ts-nestjs-migration:
 	docker compose -f backends/ts-nestjs/compose.yaml run --rm \
 	  -v "$(CURDIR)/backends/ts-nestjs/src":/app/src app \
 	  npm run migration:generate -- src/migrations/$(name)
+
+# Run a conformance suite against a backend already running on BASE_URL.
+conformance-schemathesis:
+	docker run --rm -v "$(CURDIR)/spec":/spec \
+	  schemathesis/schemathesis:4.20.3 run /spec/openapi.yaml --url $(BASE_URL)
