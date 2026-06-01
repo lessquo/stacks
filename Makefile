@@ -36,5 +36,8 @@ ts-nestjs-migration:
 
 # Run a conformance suite against a backend already running on BASE_URL.
 conformance-schemathesis:
-	docker run --rm -v "$(CURDIR)/spec":/spec \
-	  schemathesis/schemathesis:4.20.3 run /spec/openapi.yaml --url $(BASE_URL)
+	docker run --rm \
+	  -v "$(CURDIR)/spec":/spec \
+	  -v "$(CURDIR)/conformance/schemathesis/schemathesis.toml":/schemathesis.toml \
+	  schemathesis/schemathesis:4.20.3 \
+	  --config-file /schemathesis.toml run /spec/openapi.yaml --url $(BASE_URL)

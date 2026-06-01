@@ -1,0 +1,6 @@
+# `unsupported_method` ("methods not in the spec should return 405") is a
+# Schemathesis convention, not part of our contract — and the stacks differ
+# (DRF returns 405, Express returns 404). Disabled until we have more stacks and
+# decide whether to make 405-for-unknown-methods an actual spec requirement.
+[checks]
+unsupported_method.enabled = false
