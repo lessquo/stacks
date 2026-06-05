@@ -1,0 +1,20 @@
+services:
+  app:
+    build: .
+    environment:
+      PORT: 8080
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 30s
+    develop:
+      watch:
+        - action: sync+restart
+          path: .
+          target: /app
+        - action: rebuild
+          path: go.mod
