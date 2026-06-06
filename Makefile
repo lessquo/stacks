@@ -1,4 +1,4 @@
-.PHONY: go-net-http go-net-http-migrate go-net-http-sqlc python-django python-django-makemigrations python-django-migrate python-fastapi python-fastapi-revision python-fastapi-migrate ts-nestjs ts-nestjs-deps ts-nestjs-migrate ts-nestjs-migration conformance-go-net-http conformance-python-django conformance-python-fastapi conformance-ts-nestjs
+.PHONY: go-net-http go-net-http-migrate go-net-http-sqlc python-django python-django-makemigrations python-django-migrate python-fastapi python-fastapi-revision python-fastapi-migrate ts-nestjs ts-nestjs-deps ts-nestjs-migrate ts-nestjs-migration kotlin-spring conformance-go-net-http conformance-python-django conformance-python-fastapi conformance-ts-nestjs
 
 go-net-http:
 	docker compose -f backends/go-net-http/compose.yaml up --build --watch
@@ -54,6 +54,9 @@ ts-nestjs-migration:
 	docker compose -f backends/ts-nestjs/compose.yaml run --rm \
 	  -v "$(CURDIR)/backends/ts-nestjs/src":/app/src app \
 	  npm run migration:generate -- src/migrations/$(name)
+
+kotlin-spring:
+	docker compose -f backends/kotlin-spring/compose.yaml up --build --watch
 
 # One-shot conformance: spin up a throwaway stack with a fresh DB, run Schemathesis,
 # tear it down. No need to start the backend separately.
