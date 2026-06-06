@@ -1,10 +1,14 @@
-.PHONY: go-net-http go-net-http-migrate python-django python-django-makemigrations python-django-migrate ts-nestjs ts-nestjs-deps ts-nestjs-migrate ts-nestjs-migration conformance-python-django conformance-ts-nestjs
+.PHONY: go-net-http go-net-http-migrate go-net-http-sqlc python-django python-django-makemigrations python-django-migrate ts-nestjs ts-nestjs-deps ts-nestjs-migrate ts-nestjs-migration conformance-python-django conformance-ts-nestjs
 
 go-net-http:
 	docker compose -f backends/go-net-http/compose.yaml up --build --watch
 
 go-net-http-migrate:
 	docker compose -f backends/go-net-http/compose.yaml run --rm app go run . migrate
+
+# Regenerate the type-safe query layer from queries/ + migrations/ (schema source).
+go-net-http-sqlc:
+	docker run --rm -v "$(CURDIR)/backends/go-net-http":/src -w /src sqlc/sqlc:1.31.1 generate
 
 python-django:
 	docker compose -f backends/python-django/compose.yaml up --build --watch
