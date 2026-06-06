@@ -1,4 +1,4 @@
-.PHONY: go-net-http go-net-http-migrate go-net-http-sqlc python-django python-django-makemigrations python-django-migrate python-fastapi python-fastapi-revision python-fastapi-migrate ts-nestjs ts-nestjs-deps ts-nestjs-migrate ts-nestjs-migration conformance-go-net-http conformance-python-django conformance-ts-nestjs
+.PHONY: go-net-http go-net-http-migrate go-net-http-sqlc python-django python-django-makemigrations python-django-migrate python-fastapi python-fastapi-revision python-fastapi-migrate ts-nestjs ts-nestjs-deps ts-nestjs-migrate ts-nestjs-migration conformance-go-net-http conformance-python-django conformance-python-fastapi conformance-ts-nestjs
 
 go-net-http:
 	docker compose -f backends/go-net-http/compose.yaml up --build --watch
@@ -62,6 +62,9 @@ conformance-go-net-http:
 
 conformance-python-django:
 	conformance/schemathesis/run.sh python-django "uv run python manage.py migrate"
+
+conformance-python-fastapi:
+	conformance/schemathesis/run.sh python-fastapi "uv run alembic upgrade head"
 
 conformance-ts-nestjs:
 	conformance/schemathesis/run.sh ts-nestjs "npm run migration:run"
