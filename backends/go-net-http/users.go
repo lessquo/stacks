@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/lessquo/stacks/go-net-http/internal/db"
 )
@@ -40,17 +41,22 @@ func toUserResponse(u db.User) userResponse {
 func (a *api) createUser(w http.ResponseWriter, r *http.Request) {
 	var req createUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid JSON", http.StatusBadRequest)
+		writeProblem(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 	if _, err := mail.ParseAddress(req.Email); err != nil {
-		http.Error(w, "invalid email", http.StatusBadRequest)
+		writeProblem(w, http.StatusBadRequest, "invalid email address")
 		return
 	}
 
 	user, err := a.q.CreateUser(r.Context(), req.Email)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			writeProblem(w, http.StatusConflict, "email already exists")
+			return
+		}
+		writeProblem(w, http.StatusInternalServerError, "internal error")
 		return
 	}
 
@@ -60,17 +66,17 @@ func (a *api) createUser(w http.ResponseWriter, r *http.Request) {
 func (a *api) getUser(w http.ResponseWriter, r *http.Request) {
 	id, err := uuid.Parse(r.PathValue("id"))
 	if err != nil {
-		http.Error(w, "not found", http.StatusNotFound)
+		writeProblem(w, http.StatusNotFound, "user not found")
 		return
 	}
 
 	user, err := a.q.GetUser(r.Context(), id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			http.Error(w, "not found", http.StatusNotFound)
+			writeProblem(w, http.StatusNotFound, "user not found")
 			return
 		}
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeProblem(w, http.StatusInternalServerError, "internal error")
 		return
 	}
 
