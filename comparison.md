@@ -21,6 +21,7 @@ Every backend implements the same contract ([`spec/openapi.yaml`](spec/openapi.y
 | `timestamptz` | explicit (migration DDL) | free (`USE_TZ=True`) | explicit (`DateTime(timezone=True)`) | explicit (`type: 'timestamptz'`) |
 | snake_case columns | hand-written in SQL | free (field name *is* the column) | free (mapped attr name *is* the column) | custom `SnakeNamingStrategy` |
 | Table name | `users` | `users_user` | `users` | `users` |
+| Create round-trips | 1 — `INSERT … RETURNING` | 1 — plain `INSERT` (values app-side) | 1 — `INSERT … RETURNING` | 1 — `INSERT … RETURNING` |
 
 ## Contract behavior (same result, different mechanism)
 
@@ -36,3 +37,5 @@ Every backend implements the same contract ([`spec/openapi.yaml`](spec/openapi.y
 All four reach the duplicate-detection result through the **same Postgres signal** (SQLSTATE `23505`) via different language APIs — a good example of "identical contract, idiomatic internals."
 
 A FastAPI-specific catch: Pydantic's `EmailStr` *normalizes* addresses (punycode → Unicode), which made the response email violate the spec's `format: email` — surfaced by conformance and fixed by validating without rewriting the input, matching how the other stacks behave on the wire.
+
+All four also create a user in a **single round-trip** (verified by Postgres `log_statement`): the DB-side-default stacks (go-net-http, python-fastapi, ts-nestjs) fetch the server-generated id/timestamps with `INSERT … RETURNING`, while python-django supplies every value app-side and needs only a plain `INSERT`. Notably TypeORM's `save()` uses `RETURNING` here rather than the insert-then-`SELECT` it's sometimes assumed to do.
