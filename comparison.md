@@ -16,11 +16,11 @@ Every backend implements the same contract ([`spec/openapi.yaml`](spec/openapi.y
 
 | | go-net-http | python-django | python-fastapi | ts-nestjs |
 |---|---|---|---|---|
-| UUIDv7 id | Postgres-native `uuidv7()` (DB-generated) | Postgres-native `uuidv7()` (`db_default=Func('uuidv7')`) | Postgres-native `uuidv7()` (DB-generated) | Postgres-native `uuidv7()` (DB-generated) |
-| Timestamps set by | DB default (`now()`) | DB default (`db_default=Func('now')`) | DB default (`now()`) | DB default (`@CreateDateColumn`) |
+| UUIDv7 id (DB-side `uuidv7()`) | hand-written DDL | `db_default=Func('uuidv7')` | `server_default=text('uuidv7()')` | `@PrimaryColumn(default: () => 'uuidv7()')` |
+| Timestamps (DB default `now()`) | hand-written DDL | `db_default=Func('now')` | `server_default=func.now()` | `@CreateDateColumn` / `@UpdateDateColumn` |
 | `timestamptz` | explicit (migration DDL) | free (`USE_TZ=True`) | explicit (`DateTime(timezone=True)`) | explicit (`type: 'timestamptz'`) |
 | snake_case columns | hand-written in SQL | free (field name *is* the column) | free (mapped attr name *is* the column) | custom `SnakeNamingStrategy` |
-| Table name | `users` | `users` (`Meta.db_table`) | `users` | `users` |
+| Table name (`users`) | hand-written DDL | `Meta.db_table` | `__tablename__` | `@Entity('users')` |
 | Create round-trips | 1 — `INSERT … RETURNING` | 1 — `INSERT … RETURNING` | 1 — `INSERT … RETURNING` | 1 — `INSERT … RETURNING` |
 
 ## Contract behavior (same result, different mechanism)
