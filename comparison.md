@@ -16,12 +16,12 @@ Every backend implements the same contract ([`spec/openapi.yaml`](spec/openapi.y
 
 | | go-net-http | python-django | python-fastapi | ts-nestjs |
 |---|---|---|---|---|
-| UUIDv7 id | Postgres-native `uuidv7()` (DB-generated) | Python `uuid.uuid7()` (app-generated) | Postgres-native `uuidv7()` (DB-generated) | Postgres-native `uuidv7()` (DB-generated) |
-| Timestamps set by | DB default (`now()`) | Python (`auto_now_add`) | DB default (`now()`) | DB default (`@CreateDateColumn`) |
+| UUIDv7 id | Postgres-native `uuidv7()` (DB-generated) | Postgres-native `uuidv7()` (`db_default=Func('uuidv7')`) | Postgres-native `uuidv7()` (DB-generated) | Postgres-native `uuidv7()` (DB-generated) |
+| Timestamps set by | DB default (`now()`) | DB default (`db_default=Func('now')`) | DB default (`now()`) | DB default (`@CreateDateColumn`) |
 | `timestamptz` | explicit (migration DDL) | free (`USE_TZ=True`) | explicit (`DateTime(timezone=True)`) | explicit (`type: 'timestamptz'`) |
 | snake_case columns | hand-written in SQL | free (field name *is* the column) | free (mapped attr name *is* the column) | custom `SnakeNamingStrategy` |
-| Table name | `users` | `users_user` | `users` | `users` |
-| Create round-trips | 1 — `INSERT … RETURNING` | 1 — plain `INSERT` (values app-side) | 1 — `INSERT … RETURNING` | 1 — `INSERT … RETURNING` |
+| Table name | `users` | `users` (`Meta.db_table`) | `users` | `users` |
+| Create round-trips | 1 — `INSERT … RETURNING` | 1 — `INSERT … RETURNING` | 1 — `INSERT … RETURNING` | 1 — `INSERT … RETURNING` |
 
 ## Contract behavior (same result, different mechanism)
 
@@ -38,4 +38,6 @@ All four reach the duplicate-detection result through the **same Postgres signal
 
 A FastAPI-specific catch: Pydantic's `EmailStr` *normalizes* addresses (punycode → Unicode), which made the response email violate the spec's `format: email` — surfaced by conformance and fixed by validating without rewriting the input, matching how the other stacks behave on the wire.
 
-All four also create a user in a **single round-trip** (verified by Postgres `log_statement`): the DB-side-default stacks (go-net-http, python-fastapi, ts-nestjs) fetch the server-generated id/timestamps with `INSERT … RETURNING`, while python-django supplies every value app-side and needs only a plain `INSERT`. Notably TypeORM's `save()` uses `RETURNING` here rather than the insert-then-`SELECT` it's sometimes assumed to do.
+All four create a user in a **single `INSERT … RETURNING` round-trip** (verified by Postgres `log_statement`): every stack now uses DB-side defaults and fetches the server-generated id/timestamps in the same statement. (python-django originally generated those values app-side and used a plain `INSERT`; it was moved to DB-side defaults via `db_default` to match `spec/schema.sql`. TypeORM's `save()` uses `RETURNING` here rather than the insert-then-`SELECT` it's sometimes assumed to do.)
+
+`spec/schema.sql` is the persistence source of truth; bringing python-django into line with it required modest, supported overrides against Django's grain — `db_default=Func('now')` (its idiomatic `Now()` renders `statement_timestamp()`, and `auto_now_add`/`auto_now` are app-side), `db_default=Func('uuidv7')` (no built-in UUIDv7 expression), `Meta.db_table = 'users'`, and `TextField` over `EmailField` (email validation stays in the serializer's explicit `EmailField`). All achievable, with the timestamp default the only real friction point.
