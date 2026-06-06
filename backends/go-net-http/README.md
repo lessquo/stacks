@@ -32,18 +32,12 @@ Hand-written SQL in [`queries/`](queries/) is compiled by sqlc into the type-saf
 
 ## Implementation choices
 
-Internal, idiomatic-to-this-stack decisions. The shared contract stays implementation-neutral — on the wire these are just a `uuid` string and an ISO-8601 `date-time` string.
+Stack-local detail not captured by [comparison.md](../../comparison.md), which has the cross-stack mechanics (ids, timestamps, validation, errors, routing):
 
 - **No framework, no ORM:** stdlib `net/http` for routing, sqlc-generated code over pgx for queries — every SQL statement is hand-written and visible (the deliberate contrast to the ORM stacks).
-- **Routing:** Go 1.22+ `ServeMux` method+path patterns (`POST /users`, `GET /users/{id}`); the health route is anchored `GET /{$}`.
-- **IDs:** UUIDv7 via Postgres-native `uuidv7()` (Postgres 18) — DB-generated, time-ordered.
-- **Timestamps:** `timestamptz` with DB defaults (`now()`), serialized as ISO-8601 by `time.Time`'s JSON marshaling.
+- **Routing:** Go 1.22+ `ServeMux` method+path patterns; the health route is anchored `GET /{$}`.
 - **Type mapping:** sqlc overrides `uuid`→`google/uuid.UUID` and `timestamptz`→`time.Time` (clean because every column is `NOT NULL`), instead of pgx's nullable `pgtype.*` wrappers.
 - **Wire vs DB types:** separate camelCase JSON structs (`userResponse`, `createUserRequest`) decoupled from the generated `db.User`, so the contract never leaks DB types and the generated code stays tag-free.
-- **Validation:** stdlib `net/mail.ParseAddress` (no dependency, no regex).
-- **Duplicate email → `409`:** `errors.As` extracts `*pgconn.PgError`, checks SQLSTATE `23505`.
-- **Malformed id → `404`:** an unparseable UUID is treated as not-found (`uuid.Parse` error → `404`).
-- **Errors:** RFC 9457 `application/problem+json` (`{ status, title, detail }`) via a small `writeProblem` helper.
 
 ## Dev environment
 

@@ -32,19 +32,13 @@ Alembic reads the DB URL from [`db.py`](db.py) (built from `DB_*` env vars) via 
 
 ## Implementation choices
 
-Internal, idiomatic-to-this-stack decisions. The shared contract stays implementation-neutral — on the wire these are just a `uuid` string and an ISO-8601 `date-time` string.
+Stack-local detail not captured by [comparison.md](../../comparison.md), which has the cross-stack mechanics (ids, timestamps, validation, errors, routing):
 
-- **Async-first:** `async def` endpoints on uvicorn, the async SQLAlchemy engine + asyncpg, a per-request `AsyncSession` injected with `Depends`.
-- **ORM:** SQLAlchemy 2.0 declarative models (`Mapped[...]` / `mapped_column`), the third distinct data layer in the repo (vs Django ORM and Go's no-ORM sqlc).
-- **IDs:** UUIDv7 via Postgres-native `uuidv7()` (Postgres 18), DB-generated through `server_default` — time-ordered.
-- **Timestamps:** `timestamptz` (`DateTime(timezone=True)`) with DB defaults (`now()`), serialized as ISO-8601 by Pydantic.
-- **Single-statement create:** SQLAlchemy's `eager_defaults="auto"` appends the server-generated columns to the insert's `RETURNING`, so create is one `INSERT … RETURNING id, created_at, updated_at` round-trip — no follow-up `SELECT`.
+- **Async-first:** `async def` endpoints on uvicorn, async SQLAlchemy 2.0 (`Mapped[...]` / `mapped_column`) + asyncpg, a per-request `AsyncSession` injected with `Depends`.
+- **Single-statement create:** SQLAlchemy's `eager_defaults="auto"` appends the server-generated columns to the insert's `RETURNING`, so create is one `INSERT … RETURNING` round-trip — no follow-up `SELECT`.
 - **Wire vs DB types:** Pydantic `CreateUser` / `UserResponse` schemas decoupled from the ORM model; camelCase output (`createdAt`) comes from a serialization-only alias, so `from_attributes` still reads the snake_case ORM attributes.
-- **Validation:** an `email-validator`-backed annotated type that validates but **returns the client's original string** — `EmailStr` would normalize the address (e.g. punycode → Unicode) and break the contract's `format: email` (caught by conformance).
-- **Duplicate email → `409`:** catch SQLAlchemy `IntegrityError`, check `exc.orig.sqlstate == "23505"`.
-- **Malformed id → `404`:** the path param is a `str` parsed with `UUID(...)`; a `ValueError` is treated as not-found (FastAPI's default would be `422`).
-- **Validation → `400`:** a `RequestValidationError` handler overrides FastAPI's default `422`.
-- **Errors:** RFC 9457 `application/problem+json` (`{ status, title, detail }`) via exception handlers in [`problem.py`](problem.py).
+- **Validation gotcha:** an `email-validator`-backed annotated type validates but **returns the client's original string** — `EmailStr` would normalize the address (e.g. punycode → Unicode) and break the contract's `format: email` (caught by conformance).
+- **Overriding FastAPI's `422`:** FastAPI defaults to `422` for both invalid bodies and malformed path UUIDs; handlers in [`problem.py`](problem.py) remap these to `400` (validation) and `404` (malformed id) to match the contract.
 
 ## Dev environment
 

@@ -29,14 +29,11 @@ make ts-nestjs-migrate                         # apply pending migrations
 
 ## Implementation choices
 
-Internal, idiomatic-to-this-stack decisions. The shared contract stays implementation-neutral — on the wire these are just a `uuid` string and an ISO-8601 `date-time` string.
+Stack-local detail not captured by [comparison.md](../../comparison.md), which has the cross-stack mechanics (ids, timestamps, validation, errors, routing):
 
-- **IDs:** UUIDv7 via Postgres-native `uuidv7()` — time-ordered, better index locality than v4.
-- **Timestamps:** `timestamptz` (UTC), serialized as ISO-8601.
-- **DB columns:** snake_case (`created_at`, …) via a custom `SnakeNamingStrategy`; TS properties and JSON stay camelCase.
-- **Validation:** global `ValidationPipe({ whitelist: true })` + `class-validator`; the path `id` is validated as a UUID (`ParseUUIDPipe`).
-- **Errors:** RFC 9457 `application/problem+json` (`{ status, title, detail }`) via a global exception filter.
-- **Unrouted CRUD:** `findAll` / `update` / `remove` are implemented in `UsersService` but not exposed (the contract defines only create + get-by-id) — ready to route when the spec adds them.
+- **Structure:** classic NestJS layering via DI — `UsersController` (routes) delegates to `UsersService`, which uses the injected TypeORM repository, all wired in `UsersModule`.
+- **Validation:** the global `ValidationPipe({ whitelist: true })` strips unknown body properties before they reach the DTO.
+- **Unrouted CRUD:** `findAll` / `update` / `remove` exist in `UsersService` but aren't routed — ready to expose when the spec adds them.
 
 ## Dev environment
 
