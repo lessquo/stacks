@@ -1,4 +1,4 @@
-.PHONY: go-net-http go-net-http-migrate go-net-http-sqlc python-django python-django-makemigrations python-django-migrate ts-nestjs ts-nestjs-deps ts-nestjs-migrate ts-nestjs-migration conformance-python-django conformance-ts-nestjs
+.PHONY: go-net-http go-net-http-migrate go-net-http-sqlc python-django python-django-makemigrations python-django-migrate ts-nestjs ts-nestjs-deps ts-nestjs-migrate ts-nestjs-migration conformance-go-net-http conformance-python-django conformance-ts-nestjs
 
 go-net-http:
 	docker compose -f backends/go-net-http/compose.yaml up --build --watch
@@ -43,6 +43,9 @@ ts-nestjs-migration:
 
 # One-shot conformance: spin up a throwaway stack with a fresh DB, run Schemathesis,
 # tear it down. No need to start the backend separately.
+conformance-go-net-http:
+	conformance/schemathesis/run.sh go-net-http "go run . migrate"
+
 conformance-python-django:
 	conformance/schemathesis/run.sh python-django "uv run python manage.py migrate"
 
