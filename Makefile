@@ -1,4 +1,4 @@
-.PHONY: go-net-http go-net-http-migrate go-net-http-sqlc python-django python-django-makemigrations python-django-migrate python-fastapi ts-nestjs ts-nestjs-deps ts-nestjs-migrate ts-nestjs-migration conformance-go-net-http conformance-python-django conformance-ts-nestjs
+.PHONY: go-net-http go-net-http-migrate go-net-http-sqlc python-django python-django-makemigrations python-django-migrate python-fastapi python-fastapi-revision python-fastapi-migrate ts-nestjs ts-nestjs-deps ts-nestjs-migrate ts-nestjs-migration conformance-go-net-http conformance-python-django conformance-ts-nestjs
 
 go-net-http:
 	docker compose -f backends/go-net-http/compose.yaml up --build --watch
@@ -25,6 +25,17 @@ python-django-migrate:
 
 python-fastapi:
 	docker compose -f backends/python-fastapi/compose.yaml up --build --watch
+
+python-fastapi-revision:
+	docker compose -f backends/python-fastapi/compose.yaml run --rm \
+	  -v "$(CURDIR)/backends/python-fastapi/models.py":/app/models.py \
+	  -v "$(CURDIR)/backends/python-fastapi/alembic":/app/alembic app \
+	  uv run alembic revision --autogenerate -m "$(name)"
+
+python-fastapi-migrate:
+	docker compose -f backends/python-fastapi/compose.yaml run --rm \
+	  -v "$(CURDIR)/backends/python-fastapi/alembic":/app/alembic app \
+	  uv run alembic upgrade head
 
 ts-nestjs:
 	docker compose -f backends/ts-nestjs/compose.yaml up --build --watch
