@@ -1,4 +1,4 @@
-.PHONY: go-net-http go-net-http-migrate go-net-http-sqlc python-django python-django-makemigrations python-django-migrate python-fastapi python-fastapi-revision python-fastapi-migrate ts-nestjs ts-nestjs-deps ts-nestjs-migrate ts-nestjs-migration kotlin-spring kotlin-spring-migrate conformance-go-net-http conformance-python-django conformance-python-fastapi conformance-ts-nestjs
+.PHONY: go-net-http go-net-http-migrate go-net-http-sqlc kotlin-spring kotlin-spring-migrate python-django python-django-makemigrations python-django-migrate python-fastapi python-fastapi-revision python-fastapi-migrate ts-nestjs ts-nestjs-deps ts-nestjs-migrate ts-nestjs-migration conformance-go-net-http conformance-kotlin-spring conformance-python-django conformance-python-fastapi conformance-ts-nestjs
 
 go-net-http:
 	docker compose -f backends/go-net-http/compose.yaml up --build --watch
@@ -9,6 +9,14 @@ go-net-http-migrate:
 # Regenerate the type-safe query layer from queries/ + migrations/ (schema source).
 go-net-http-sqlc:
 	docker run --rm -v "$(CURDIR)/backends/go-net-http":/src -w /src sqlc/sqlc:1.31.1 generate
+
+kotlin-spring:
+	docker compose -f backends/kotlin-spring/compose.yaml up --build --watch
+
+# Flyway is off on boot; this enables it in a non-web context that migrates and exits.
+kotlin-spring-migrate:
+	docker compose -f backends/kotlin-spring/compose.yaml run --rm app \
+	  ./gradlew bootRun --args="--spring.flyway.enabled=true --spring.main.web-application-type=none"
 
 python-django:
 	docker compose -f backends/python-django/compose.yaml up --build --watch
@@ -55,18 +63,13 @@ ts-nestjs-migration:
 	  -v "$(CURDIR)/backends/ts-nestjs/src":/app/src app \
 	  npm run migration:generate -- src/migrations/$(name)
 
-kotlin-spring:
-	docker compose -f backends/kotlin-spring/compose.yaml up --build --watch
-
-# Flyway is off on boot; this enables it in a non-web context that migrates and exits.
-kotlin-spring-migrate:
-	docker compose -f backends/kotlin-spring/compose.yaml run --rm app \
-	  ./gradlew bootRun --args="--spring.flyway.enabled=true --spring.main.web-application-type=none"
-
 # One-shot conformance: spin up a throwaway stack with a fresh DB, run Schemathesis,
 # tear it down. No need to start the backend separately.
 conformance-go-net-http:
 	conformance/schemathesis/run.sh go-net-http "go run . migrate"
+
+conformance-kotlin-spring:
+	conformance/schemathesis/run.sh kotlin-spring "./gradlew bootRun --args='--spring.flyway.enabled=true --spring.main.web-application-type=none'"
 
 conformance-python-django:
 	conformance/schemathesis/run.sh python-django "uv run python manage.py migrate"
