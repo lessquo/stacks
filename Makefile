@@ -1,4 +1,4 @@
-.PHONY: go-net-http go-net-http-migrate go-net-http-sqlc python-django python-django-makemigrations python-django-migrate python-fastapi python-fastapi-revision python-fastapi-migrate ts-nestjs ts-nestjs-deps ts-nestjs-migrate ts-nestjs-migration kotlin-spring conformance-go-net-http conformance-python-django conformance-python-fastapi conformance-ts-nestjs
+.PHONY: go-net-http go-net-http-migrate go-net-http-sqlc python-django python-django-makemigrations python-django-migrate python-fastapi python-fastapi-revision python-fastapi-migrate ts-nestjs ts-nestjs-deps ts-nestjs-migrate ts-nestjs-migration kotlin-spring kotlin-spring-migrate conformance-go-net-http conformance-python-django conformance-python-fastapi conformance-ts-nestjs
 
 go-net-http:
 	docker compose -f backends/go-net-http/compose.yaml up --build --watch
@@ -57,6 +57,11 @@ ts-nestjs-migration:
 
 kotlin-spring:
 	docker compose -f backends/kotlin-spring/compose.yaml up --build --watch
+
+# Flyway is off on boot; this enables it in a non-web context that migrates and exits.
+kotlin-spring-migrate:
+	docker compose -f backends/kotlin-spring/compose.yaml run --rm app \
+	  ./gradlew bootRun --args="--spring.flyway.enabled=true --spring.main.web-application-type=none"
 
 # One-shot conformance: spin up a throwaway stack with a fresh DB, run Schemathesis,
 # tear it down. No need to start the backend separately.
